@@ -16,7 +16,7 @@ class MqtterProcess(multiprocessing.Process):
         self.client = None
         with open("./static/deviceInform.json", 'r') as f:
             self.deviceInform = json.load(f)
-        # self topic: /client/robot/ROS
+        # self topic: /client/ROS/huanyu
         self.selfTopic = '/client/{0}/{1}'.format(self.deviceInform['devType'], self.deviceInform['deviceId'])
 
     def run(self):
@@ -26,8 +26,7 @@ class MqtterProcess(multiprocessing.Process):
             # 发送数据的部分，可以复用
             if self._flag.value and ~self.queue.empty():
                 data = self.queue.get()
-                # 需要更改topic
-                self.client.publish('/client/{0}/{1}/showdata/wav'.format(self.deviceInform['devType'], self.deviceInform['deviceId']), data, 2)
+                self.client.publish(self.selfTopic + '/showdata/map', data, 2)
 
     def connect_mqtt(self):
         def on_connect(client, userdata, flags, rc):
@@ -41,7 +40,6 @@ class MqtterProcess(multiprocessing.Process):
                 self.publish('/client/online', inform)
                 print("Connection returned with result code:" + str(rc))
             else:
-                # 还得做一些其他操作来保证连接
                 print("连接失败！")
             client.subscribe(
                 '/broker/{0}/{1}/#'.format(self.deviceInform['devType'], self.deviceInform['deviceId']))
@@ -50,23 +48,34 @@ class MqtterProcess(multiprocessing.Process):
             print("Received message, topic:" + msg.topic + ' and payload:' + str(msg.payload))
             msg_topic = msg.topic
             msg_payload = json.loads(msg.payload)
+            # 手动初始化
+            if msg_topic.endswith('/config'):
+                self._res_init(client, userdata, msg)
+            # 更新设备参数
+            if msg_topic.endswith('/update'):
+                # 预留接口
+                pass
+            # 重启
             if msg_topic.endswith('/reboot'):
                 self._res_reboot(client, userdata, msg)
-            if msg_topic.endswith('/update'):
-                self._res_update(client, userdata, msg)
             if msg_topic.endswith('/add'):
                 # 预留接口
                 pass
             if msg_topic.endswith('/remove'):
                 # 预留接口
                 pass
+            # 开启slam
             if msg_topic.endswith('/start'):
                 if self._flag.value:
                     self._stop()
                 self._start()
+            # 停止slam
             if msg_topic.endswith('/stop'):
                 if self._flag.value:
                     self._stop()
+            # 上传地图
+            if msg_topic.endswith('/showmap'):
+                self._res_showmap(client, userdata, msg)
         client = mqtt_client.Client()
         # # 设置账号密码（如果需要的话）
         # client.username_pw_set('username', 'password')
@@ -93,6 +102,7 @@ class MqtterProcess(multiprocessing.Process):
             'deviceId': self.deviceInform['deviceId'],
             'devType': self.deviceInform['devType'],
             'stat': self.deviceInform['stat'],
+            'param': self.deviceInform['param'],
             'position': self.deviceInform['position'],
             'ip': self.deviceInform['ip']
         }
@@ -102,22 +112,22 @@ class MqtterProcess(multiprocessing.Process):
     def _start(self):
         inform = json.dumps({'message': '{0} received the request for start sampling'.format(self.deviceInform['deviceId'])})
         self.client.publish('/client/{0}/{1}/start'.format(self.deviceInform['devType'], self.deviceInform['deviceId']), inform)
+        # 打开gmapping
         self.deviceInform['stat'] = 'working'
         self._flag.value = True
 
     def _stop(self):
         inform = json.dumps({'message': '{0} received the request for stop sampling'.format(self.deviceInform['deviceId'])})
         self.client.publish('/client/{0}/{1}/stop'.format(self.deviceInform['devType'], self.deviceInform['deviceId']), inform)
+        # 关闭gmapping
         self.deviceInform['stat'] = 'on'
         self._flag.value = False
 
-    def _res_update(self, client, userdata, msg):
-        inform = json.dumps({'message': 'Acoustic8 received the request for changing params'})
-        params = json.loads(msg.payload)['data']
-        # 更新参数并写入配置文件
-        self.params = params
-        with open("static/deviceInform.json", "w") as f:
-            json.dump(params, f)
+    def _res_init(self, client, userdata, msg):
+        inform = json.dumps({'message': '{0} reinit successfully.'.format(self.deviceInform['deviceId'])})
+        # 重新初始化
+        # 依次执行脚本
+        # 然后检查状态
         self.client.publish(self.selfTopic + "/update", payload=inform)
 
     def _res_reboot(self, client, userdata, msg):
@@ -131,3 +141,7 @@ class MqtterProcess(multiprocessing.Process):
         })
         client.publish('/client/offline', payload=inform)
         os.system("sudo reboot")
+
+    def _res_showmap(self, client, userdate, msg):
+        # 本地保存地图，转换成二进制，发送
+        pass

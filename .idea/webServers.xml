@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="2d104d7c-bf4e-4f93-ae29-53fe291e2e91" name="ROS">
-        <fileTransfer rootFolder="/home/huanyu" accessType="SFTP" host="192.168.137.2" port="22" sshConfigId="9436168e-4a56-4ff9-b863-72785bf0cb81" sshConfig="huanyu@192.168.137.2:22 password">
+        <fileTransfer rootFolder="/home/huanyu" accessType="SFTP" host="192.168.1.140" port="22" sshConfigId="9436168e-4a56-4ff9-b863-72785bf0cb81" sshConfig="huanyu@192.168.1.140:22 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

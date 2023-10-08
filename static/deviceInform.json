@@ -1,7 +1,8 @@
 {
-  "deviceId": "ROS",
-  "devType": "robot",
+  "deviceId": "huanyu",
+  "devType": "ROS",
   "stat": "on",
+  "param": {},
   "position": [],
   "ip": ""
 }

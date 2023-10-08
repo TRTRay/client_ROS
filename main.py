@@ -5,9 +5,11 @@ from mqtter import MqtterProcess
 # cloud server
 # MQTT_HOST = '182.92.152.209'
 # localhost
-MQTT_HOST = '192.168.137.1'
+# MQTT_HOST = '192.168.137.1'
 # localhost with hardware link
 # MQTT_HOST = '192.168.0.190'
+# 使用电脑连接机器人热点，在本地调试时分配的地址，有时可能需要现调整
+MQTT_HOST = '192.168.1.157'
 MQTT_PORT = 1883
 
 # 按间距中的绿色按钮以运行脚本。
